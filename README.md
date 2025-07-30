@@ -8,7 +8,7 @@ A simple web project to display a countdown timer for the New Year.
 
 1. Clone the repo:
 ```bash
-git clone git@github.com:Kengpu/NewYearCountDown.git
+git clone https://github.com/Kengpu/NewYearCountDown.git
 cd NewYearCountDown
 ```
 2. Install dependencies (e.g., Tailwind CSS):
