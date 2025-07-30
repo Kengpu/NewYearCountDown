@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>New Year Countdown</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="./dist/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+
+    <style>
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f0f2f5; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; 
+            transition: background-color 0.8s ease; 
+            position: relative; 
+            z-index: 1; 
+        }
+        /* Three.js canvas container - initially hidden */
+        #three-background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; 
+            display: none;
+        }
+
+        body.dark-mode {
+            background-color: #121212; 
+        }
+        /* Make dark mode background semi-transparent when Three.js is active */
+        body.dark-mode.three-bg-active {
+            background-color: rgba(18, 18, 18, 0.7);
+        }
+
+
+        h2 {
+            font-family: 'Montserrat', sans-serif;
+            transition: color 0.8s ease, text-shadow 0.8s ease;
+        }
+        body.dark-mode h2 {
+            color: #ffffff; /* White text in dark mode for visibility */
+        }
+        body.dark-mode h2.neon-title { /* New class for title glow */
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.6), 0 0 20px rgba(0, 255, 204, 0.4); 
+        }
+
+        .countdown-unit-value {
+            font-family: 'Montserrat', sans-serif; 
+            transition: color 0.8s ease, text-shadow 0.8s ease;
+        }
+        body.dark-mode .countdown-unit-value {
+             color: #00ffcc; 
+        }
+        body.dark-mode .countdown-unit-value.neon-year {
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.6), 0 0 20px rgba(0, 255, 204, 0.4); 
+        }
+
+        /* Custom background for the main container if you want a subtle off-white */
+        .main-container-bg {
+            background-color: #ffffff;
+            transition: background-color 0.8s ease, box-shadow 0.8s ease; 
+            position: relative; 
+            z-index: 2;
+        }
+        .main-container-bg.dark-mode { 
+             background-color: rgba(42, 42, 42, 0.5); 
+            border-color: #333; 
+        }
+
+        /* Style for the dark countdown boxes - Glass effect */
+        .dark-countdown-box {
+            background-color: #2D3748; 
+            color: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px 0; 
+            transition: background-color 0.8s ease, box-shadow 0.8s ease; 
+            position: relative; 
+            overflow: hidden; 
+        }
+        body.dark-mode .dark-countdown-box {
+            /* This is the key for the glass effect */
+            background-color: rgba(42, 42, 42, 0.5); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px); 
+        }
+
+        /* Style for the numbers inside the dark countdown boxes */
+        .dark-countdown-box.neon-border div[id]:first-child { 
+            color: #ffffff; /* Make numbers white */
+            text-shadow: 0 0 8px rgba(0, 255, 204, 0.6), 0 0 15px rgba(0, 255, 204, 0.4);
+            transition: color 0.8s ease, text-shadow 0.8s ease;
+        }
+        /* Style for the text below the numbers (Days, Hours, etc.) */
+        .dark-countdown-box.neon-border div:last-child {
+            color: #00ffff; 
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5); 
+            transition: color 0.8s ease, text-shadow 0.8s ease;
+        }
+
+
+        /* Neon Border Effect - Only applies when .neon-border is present on .dark-countdown-box */
+        .dark-countdown-box.neon-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border-radius: 14px; 
+            background: linear-gradient(45deg, #ff007f, #00ffff, #ffcc00, #00ff7f, #cc00ff, #ff007f); 
+            background-size: 300% 300%;
+            animation: glowing 3s linear infinite, borderRotate 6s linear infinite; 
+            z-index: -1;
+            filter: blur(8px);
+            opacity: 0.8;
+        }
+
+        /* Second pseudo-element for a sharper border */
+        .dark-countdown-box.neon-border::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 12px;
+            background: linear-gradient(45deg, #ff007f, #00ffff, #ffcc00, #00ff7f, #cc00ff, #ff007f); /* Rainbow gradient */
+            background-size: 300% 300%;
+            animation: borderRotate 6s linear infinite; 
+            z-index: -1;
+            opacity: 0.6;
+        }
+        /* Inner box shadow for the dark-countdown-box when neon-border is active */
+        .dark-countdown-box.neon-border {
+             box-shadow: 0 0 15px rgba(0, 255, 204, 0.2), inset 0 0 10px rgba(0, 255, 204, 0.1);
+        }
+
+
+        /* Animations */
+        @keyframes dropZoom {
+            0% { transform: scale(1) translateY(0); opacity: 1; }
+            50% { transform: scale(1.05) translateY(20px); opacity: 0.9; }
+            70% { transform: scale(0.95) translateY(-10px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); } 
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        @keyframes glowing {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes borderRotate {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .drop-zoom {
+            animation: dropZoom 0.6s ease forwards;
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out 3; 
+            animation-fill-mode: forwards;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.131/build/three.module.js"
+            }
+        }
+    </script>
+</head>
+<body class="h-full">
+    <div id="three-background-canvas"></div> <div id="container" class="w-full max-w-4xl main-container-bg rounded-2xl shadow-xl p-8 sm:p-12 text-center border border-gray-200">
+
+        <div class="mb-10">
+            <h2 class="text-gray-800 text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">New Year Countdown</h2>
+        </div>
+
+        <div class="mb-12">
+            <p class="text-emerald-600 text-6xl sm:text-7xl lg:text-8xl font-extrabold countdown-unit-value" id="target-year">0000</p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 justify-items-center">
+
+            <div class="flex flex-col items-center dark-countdown-box w-full max-w-[150px]">
+                <div id="day" class="text-5xl sm:text-6xl font-bold countdown-unit-value">00</div>
+                <div class="text-gray-300 text-lg sm:text-xl font-semibold mt-2">Days</div>
+            </div>
+
+            <div class="flex flex-col items-center dark-countdown-box w-full max-w-[150px]">
+                <div id="hour" class="text-5xl sm:text-6xl font-bold countdown-unit-value">00</div>
+                <div class="text-gray-300 text-lg sm:text-xl font-semibold mt-2">Hours</div>
+            </div>
+
+            <div class="flex flex-col items-center dark-countdown-box w-full max-w-[150px]">
+                <div id="minute" class="text-5xl sm:text-6xl font-bold countdown-unit-value">00</div>
+                <div class="text-gray-300 text-lg sm:text-xl font-semibold mt-2">Minutes</div>
+            </div>
+
+            <div class="flex flex-col items-center dark-countdown-box w-full max-w-[150px]">
+                <div id="second" class="text-5xl sm:text-6xl font-bold countdown-unit-value">00</div>
+                <div class="text-gray-300 text-lg sm:text-xl font-semibold mt-2">Seconds</div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="animation.js"></script>
+</body>
+</html>
